@@ -1,9 +1,15 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const fetch = require("node-fetch");
+const cors = require("cors");
 
 const app = express();
 
+//Allow access from front end
+const corsOption = {
+    origin: "http://localhost:3000",
+    optionSuccessStatus: 200
+};
 
 // All lists for specific searches
 let cuisines = [];
@@ -65,19 +71,23 @@ app.get("/", function (req, res) {
 
 });
 
-app.get("/all", function (req, res) {
+app.get("/:listType", cors(corsOption),function (req, res, next) {
+    const list = req.params.listType;
 
-    cuisines.forEach(function (cuisineList) {
-        cuisineList.forEach(function (cuisine) {
-            res.write(cuisine.cuisine.cuisine_name + "\n");
-        })
-    });
-    res.send();
+    if (list === "cuisines") {
+        console.log(cuisines);
+        res.send(cuisines[0]);
+    } else if (list === "establishments") {
+        console.log(establishments);
+        res.send(establishments[0]);
+    } else if (list === "categories") {
+        console.log(categories);
+        res.send(categories[0]);
+    } else {
+        res.send("Error in providing list.");
+    }
 });
-
-
-
-
+  
 app.listen("5000", function () {
     console.log("Backend server started at port 5000!");
 });
