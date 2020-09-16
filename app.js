@@ -93,39 +93,61 @@ app.get("/:listType", function (req, res, next) {
     }
 });
 
-app.post("/", function (req, res) {
-    const cuisineIDs = req.body.cuisine.map(({ cuisine_id }) => {
-        return cuisine_id
-    });
+app.post("/", async function (req, res) {
+    var cuisineIDs = [];
+    var establishmentIDs = [];
+    var categoryIDs = [];
 
-    const establishmentIDs = req.body.establishment.map(({ id }) => {
-        return id
-    });
+    if (req.body.cuisine !== null && req.body.cuisine.length !== 0) {
+        cuisineIDs = req.body.cuisine.map(({ cuisine_id }) => {
+            return cuisine_id
+        });
+    }
 
-    const categoryIDs = req.body.category.map(({ id }) => {
-        return id
-    });
+    if (req.body.establishment !== null && req.body.establishment.length !== 0) {
+        establishmentIDs = req.body.establishment.map(({ id }) => {
+            return id
+        });
+    }
+
+    if (req.body.category !== null && req.body.category.length !== 0) {
+        categoryIDs = req.body.category.map(({ id }) => {
+            return id
+        });
+    }
+
+    console.log(cuisineIDs);
+    console.log(establishmentIDs);
+    console.log(categoryIDs);
 
     //Refine here
-    let restaurants;
-    fetch("https://developers.zomato.com/api/v2.1/search?entity_id=70&entity_type=city&cuisines=" + cuisineIDs.toString() + "&establishment_type=" + establishmentIDs.toString() + "&category=" + categoryIDs.toString(),
-        {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "user-key": userKey,
-            }
-        }).then(function (response) {
-            return response.json();
-        }).then(function (data) {
-            restaurants=data;
-            console.log(data);
-        }).catch(function (err) {
-            console.log(err);
-        });
+    let restaurants = [];
+    let foundAll = false;
+    let count = 0;
+    while (!foundAll) {
+        await fetch("https://developers.zomato.com/api/v2.1/search?entity_id=70&entity_type=city&cuisines=" + cuisineIDs.toString() + "&establishment_type=" + establishmentIDs.toString() + "&category=" + categoryIDs.toString() + "&start=" + count,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "user-key": userKey,
+                }
+            }).then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                console.log(data.results_shown);
+                restaurants = [...restaurants, ...data.restaurants];
+                count += 20;
+                if (count >= 100 || data.results_shown === 0) {
+                    foundAll = true;
+                }
+            }).catch(function (err) {
+                console.log(err);
+            });
+    }
 
-    console.log(restaurants);
+    console.log(restaurants.length);
     res.send(restaurants);
 });
 
